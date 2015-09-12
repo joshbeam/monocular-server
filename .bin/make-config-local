@@ -2,7 +2,7 @@
 
 IP="$(ipconfig getifaddr en0)"
 
-echo "Setting config-local.json IP address to $IP"
+echo "Setting config-local.js IP address to $IP"
 
 cp ./config-example.js ./config-local.js
 
