@@ -4,11 +4,12 @@
   "description": "Server for Monocular",
   "main": "index.js",
   "dependencies": {
+    "babel": "^5.8.23",
     "express": "^4.13.3"
   },
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "babel src --out-dir dist && node dist/index.js"
   },
   "repository": {
     "type": "git",
