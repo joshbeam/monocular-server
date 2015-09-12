@@ -1,0 +1,23 @@
+{
+  "name": "monocular-server",
+  "version": "0.0.1",
+  "description": "Server for Monocular",
+  "main": "index.js",
+  "dependencies": {
+    "express": "^4.13.3"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/joshbeam/monocular-server.git"
+  },
+  "author": "Josh Beam",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/joshbeam/monocular-server/issues"
+  },
+  "homepage": "https://github.com/joshbeam/monocular-server#readme"
+}
