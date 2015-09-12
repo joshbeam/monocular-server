@@ -1,0 +1,9 @@
+#!/bin/bash
+
+IP="$(ipconfig getifaddr en0)"
+
+echo "Setting config-local.json IP address to $IP"
+
+cp ./config-example.js ./config-local.js
+
+sed -i "" "s/0.0.0.0/$IP/g" ./config-local.js

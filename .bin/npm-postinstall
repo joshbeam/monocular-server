@@ -1,1 +1,3 @@
-cp config-example.js config-local.js
+#!/bin/bash
+
+./.bin/make-config-local
