@@ -1,6 +1,8 @@
-import app from '../app.js';
-import landmark from './landmark.js';
+var express = require('express');
+var router = express.Router();
 
-app.get('/:name', landmark);
+import landmark from './landmark';
 
-module.exports = app;
+router.get('/landmark/:name', landmark);
+
+export default router;

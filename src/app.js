@@ -5,4 +5,4 @@ import routes from './routes';
 
 app.use('/api/1.0/', routes);
 
-module.exports = app;
+export default app;
