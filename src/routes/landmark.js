@@ -24,9 +24,20 @@ export default function(req, res) {
 
   q.spread(promises, function(weather) {
     var landmarkInfo = {
-      weather: weather
+      weather: formattedWeather(JSON.parse(weather))
     };
 
     res.json(landmarkInfo);
   });
+}
+
+function formattedWeather(raw) {
+  var weather = {
+    temp: raw.main.temp,
+    temp_min: raw.main.temp_min,
+    temp_max: raw.main.temp_max,
+    main: raw.weather[0].main
+  };
+
+  return weather;
 }
