@@ -19,7 +19,7 @@ export default {
         numPhotos = num;
       }
     } else {
-      numPhotos = 1;
+      numPhotos = 5;
     }
 
     searchOptions = {
@@ -62,7 +62,7 @@ export default {
                 return {
                   src: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join(''),
                   url: data.urls.url[0]._content,
-                  date_taken: new Date(data.dates.taken)
+                  date_taken: new Date(data.dates.taken).getTime()
                 };
               });
 

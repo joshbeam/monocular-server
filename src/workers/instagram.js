@@ -14,7 +14,7 @@ export default {
         numPhotos = num;
       }
     } else {
-      numPhotos = 1;
+      numPhotos = 5;
     }
 
     return new Promise((resolve, reject) => {
@@ -30,7 +30,7 @@ export default {
 
           resolve(photos.map((photo) => {
             return {
-              date_taken: new Date(+photo.created_time * 1000),
+              date_taken: new Date(+photo.created_time * 1000).getTime(),
               src: photo.images.standard_resolution.url,
               url: photo.link
             };

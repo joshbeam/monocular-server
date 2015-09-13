@@ -45,7 +45,7 @@ function formattedWeather(raw, forecast) {
       temp: raw.main.temp,
       temp_min: raw.main.temp_min,
       temp_max: raw.main.temp_max,
-      main: raw.weather[0].main
+      main: raw.weather[0].main.toLowerCase()
     };
   }
 }

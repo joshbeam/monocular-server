@@ -46,8 +46,13 @@ function compose(landmark, forecast, numPhotos) {
 
     if(!numPhotos) {
       photos.sort((a, b) => (new Date(b.date_taken).getTime() - new Date(a.date_taken).getTime()));
-      photos.length = 1;
+      // photos.length = 1;
     }
+
+    // remove photos that think they were taken in the future (we can't reliably guess the date, unfortunately)
+    photos = photos.filter((photo) => {
+      return +photo.date_taken < (new Date().getTime());
+    });
 
     let composedLandmark = _.extend(landmark, {
       weather: weather,
