@@ -60,7 +60,8 @@ export default {
                 var data = photo.photo;
 
                 return {
-                  url: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join('')
+                  src: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join(''),
+                  url: data.urls.url[0]._content
                 };
               });
 
