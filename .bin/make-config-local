@@ -4,6 +4,6 @@ IP="$(ipconfig getifaddr en0)"
 
 echo "Setting config-local.js IP address to $IP"
 
-cp ./config-example.js ./config-local.js
+cp ./src/config-example.js ./src/config-local.js
 
-sed -i "" "s/0.0.0.0/$IP/g" ./config-local.js
+sed -i "" "s/0.0.0.0/$IP/g" ./src/config-local.js
