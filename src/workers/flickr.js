@@ -1,6 +1,6 @@
 import config from '../config-local.js';
 
-let Flickr = require("flickrapi");
+let Flickr = require('flickrapi');
 
 let flickrOptions = {
   api_key: config.flickr_api_key,
@@ -61,7 +61,8 @@ export default {
 
                 return {
                   src: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join(''),
-                  url: data.urls.url[0]._content
+                  url: data.urls.url[0]._content,
+                  date_taken: new Date(data.dates.taken)
                 };
               });
 
