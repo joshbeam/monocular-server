@@ -2,16 +2,19 @@ import landmarks from '../data';
 import { weatherWorker } from '../workers';
 
 var q = require('q');
+var _ = require('lodash');
 
 export default {
   all(req, res) {
-    res.json(landmarks);
+    q.all(landmarks.map((landmark) => {
+      return compose(landmark);
+    }))
+    .then((composed) => res.json(composed));
   },
 
   one(req, res) {
     var name = req.params.name;
     var landmarkNames = landmarks.map((l) => l.name);
-    var promises = [];
     var query = req.query;
     var landmark;
 
@@ -21,17 +24,12 @@ export default {
 
     landmark = landmarks.filter((l) => l.name === name)[0];
 
-    promises.push(weatherWorker.getWeather(landmark.lat, landmark.long, req.query.forecast)
-    .then(function(weather) {
-      return weather;
-    }));
-
-    q.spread(promises, function(weather) {
-      var landmarkInfo = {
-        weather: weather
-      };
-
-      res.json(landmarkInfo);
-    });
+    compose(landmark, query.forecast)
+    .then((composed) => res.json(composed));
   }
 };
+
+function compose(landmark, forecast) {
+  return weatherWorker.getWeather(landmark.lat, landmark.long, forecast)
+  .then((weather) => _.extend(landmark, { weather: weather }));
+}
