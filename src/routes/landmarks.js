@@ -1,5 +1,5 @@
 import landmarks from '../data';
-import { weatherWorker, flickrWorker } from '../workers';
+import { weatherWorker, flickrWorker, instagramWorker } from '../workers';
 
 var q = require('q');
 var _ = require('lodash');
@@ -38,12 +38,23 @@ function compose(landmark, forecast, numPhotos) {
   promises.push(flickrWorker.getPhotos(landmark, numPhotos)
   .then((photos) => photos));
 
-  return q.spread(promises, (weather, photos) => {
-    var composedLandmark = _.extend(landmark, {
+  promises.push(instagramWorker.getPhotos(landmark, numPhotos)
+  .then((photos) => photos));
+
+  return q.spread(promises, (weather, flickrPhotos, igPhotos) => {
+    let photos = [].concat(flickrPhotos).concat(igPhotos);
+
+    // show only the latest photo from all the aggregated sources
+    if(!numPhotos) {
+      photos.sort((a, b) => (new Date(b.date_taken).getTime() - new Date(a.date_taken).getTime()));
+      photos.length = 1;
+    }
+
+    let composedLandmark = _.extend(landmark, {
       weather: weather,
       photos: photos
     });
 
-    return _.omit(composedLandmark, 'flickr_query');
+    return _.omit(composedLandmark, 'flickr_query', 'ig_tags');
   });
 }
