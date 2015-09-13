@@ -23,28 +23,15 @@ export default {
 
     promises.push(weatherWorker.getWeather(landmark.lat, landmark.long, req.query.forecast)
     .then(function(weather) {
-      return weather.body;
+      return weather;
     }));
 
     q.spread(promises, function(weather) {
       var landmarkInfo = {
-        weather: formattedWeather(JSON.parse(weather), req.query.forecast)
+        weather: weather
       };
 
       res.json(landmarkInfo);
     });
   }
 };
-
-function formattedWeather(raw, forecast) {
-  if(forecast) {
-    return raw;
-  } else {
-    return {
-      temp: raw.main.temp,
-      temp_min: raw.main.temp_min,
-      temp_max: raw.main.temp_max,
-      main: raw.weather[0].main
-    };
-  }
-}
