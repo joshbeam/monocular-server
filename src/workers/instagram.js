@@ -24,6 +24,8 @@ export default {
         } else {
           let photos = (JSON.parse(body)).data;
 
+          photos.sort((a, b) => (new Date(+b.created_time * 1000) - new Date(+a.created_time * 1000)));
+
           photos.length = numPhotos;
 
           resolve(photos.map((photo) => {
