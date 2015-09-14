@@ -1,4 +1,5 @@
 import goldenGate from './golden-gate.js';
-import deloresPark from './delores-park.js';
+import doloresPark from './dolores-park.js';
+import sanFranciscoCityHall from './san-francisco-city-hall.js';
 
-export default [goldenGate, deloresPark];
+export default [goldenGate, doloresPark, sanFranciscoCityHall];
