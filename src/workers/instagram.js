@@ -8,10 +8,14 @@ var ig = require('instagram-node').instagram();
 ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client_secret });
 
 export default {
-  // TODO: query for tags, and then query for locations
+  /**
+   *  @param landmark {PlainObject}
+   *  @param num {Number|String}
+   */
   getPhotos(landmark, num) {
     let promises = []
     .concat(new Promise((resolve, reject) => {
+      // query for photos by location
       var byLocationGenerator = (function *(l) {
         let byLocation = yield request.call(byLocationGenerator, 'media_search', +l.lat, +l.long);
 
@@ -21,6 +25,7 @@ export default {
       byLocationGenerator.next();
     }))
     .concat(new Promise((resolve, reject) => {
+      // query for photos by tag
       var byTagGenerator = (function *(t) {
         let byTag = yield request.call(byTagGenerator, 'tag_media_recent', landmark.ig_tags[0]);
 
@@ -53,12 +58,24 @@ export default {
 
 };
 
+/**
+ *  Calls the instagram API and then invokes its generator's #next method
+ *
+ *  @param method {String} one of the allowed instagram API methods
+ *  @param ...query {PlainObject|String} appropriate instagram API query params
+ */
 function request(method, ...query) {
   ig[method](...query, (err, res, rem, lim) => {
     this.next(res);
   });
 }
 
+/**
+ *  Generates a composed photo object for the client to consume.
+ *
+ *  @param media {PlainObject}
+ *  @returns {PlainObject}
+ */
 function composePhotos(media) {
   return {
     date_taken: new Date(+media.created_time * 1000).getTime(),
