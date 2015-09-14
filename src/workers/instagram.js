@@ -1,3 +1,5 @@
+'use strict';
+
 import config from '../config-local.js';
 import _ from 'lodash';
 var request = require('request');
