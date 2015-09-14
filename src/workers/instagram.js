@@ -27,8 +27,6 @@ export default {
       var byLocationGenerator = (function *(l) {
         let byLocation = yield request.call(byLocationGenerator, 'media_search', +l.lat, +l.long);
 
-        console.log('byLocatioj', byLocation.length);
-
         resolve(byLocation.map(composePhotos));
       })(landmark);
 
@@ -40,15 +38,22 @@ export default {
       var byTagGenerator = (function *(t) {
         let byTag = yield request.call(byTagGenerator, 'tag_media_recent', landmark.ig_tags[0]);
 
-        console.log('byTag', byTag.length);
-
         resolve(byTag.map(composePhotos));
       })(landmark);
 
       byTagGenerator.next();
     }));
 
-    return Promise.all(promises).then(igPhotos => _.flatten(igPhotos).slice(0, numPhotos));
+    console.log('ig ran');
+
+    return Promise.all(promises).then(igPhotos => {
+      // [[...], [...]] => [......]
+      let flat = _.flatten(igPhotos);
+      // the two separate queries could return some duplicate objects
+      let unique = _.uniq(flat);
+
+      return unique.slice(0, numPhotos)
+    });
   }
 
 };

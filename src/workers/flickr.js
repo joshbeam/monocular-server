@@ -33,6 +33,8 @@ export default {
       page: 1
     };
 
+    console.log('flickr ran');
+
     return new Promise((resolve, reject) => {
       Flickr.tokenOnly(flickrOptions, function(error, flickr) {
         flickr.photos.search(searchOptions, (err, res) => {
