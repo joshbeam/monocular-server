@@ -3,6 +3,9 @@
 import config from '../config-local.js';
 import _ from 'lodash';
 var request = require('request');
+var ig = require('instagram-node').instagram();
+
+ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client_secret });
 
 export default {
 
@@ -11,6 +14,34 @@ export default {
     let tagRoute = 'https://api.instagram.com/v1/tags/';
     let clientIdRoute = '/media/recent?client_id=' + config.ig_api_client_id;
     let numPhotos;
+
+    // ig.tag_search('query', function(err, result, remaining, limit) {
+    //   console.log(err, result);
+    // });
+
+    // new Promise((resolve, reject) => {
+    //   ig.location_search({ lat: +landmark.lat, lng: +landmark.long }, (err, res, rem, lim) => {
+    //     if(err) {
+    //       reject(err);
+    //     } else {
+    //       resolve(res.map(p => p.id));
+    //     }
+    //   });
+    // })
+    // .then((ids) => {
+    //   let mediaPromises = ids.map((id) => {
+    //     return new Promise((resolve, reject) => {
+    //       ig.media(id, (err, media, remaining, limit) => {
+    //         if(err) {
+    //           reject(err);
+    //         } else {
+    //           console.log(media);
+    //           resolve(media.data);
+    //         }
+    //       });
+    //     });
+    //   });
+    // });
 
     let resources = landmark.ig_tags.map((tag) => {
       return tagRoute + tag + clientIdRoute;
