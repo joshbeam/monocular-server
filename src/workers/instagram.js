@@ -10,7 +10,25 @@ ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client
 export default {
   // TODO: query for tags, and then query for locations
   getPhotos(landmark, num) {
-    let promises = [];
+    let promises = []
+    .concat(new Promise((resolve, reject) => {
+      var byLocationGenerator = (function *(l) {
+        let byLocation = yield request.call(byLocationGenerator, 'media_search', +l.lat, +l.long);
+
+        resolve(byLocation.map(composePhotos));
+      })(landmark);
+
+      byLocationGenerator.next();
+    }))
+    .concat(new Promise((resolve, reject) => {
+      var byTagGenerator = (function *(t) {
+        let byTag = yield request.call(byTagGenerator, 'tag_media_recent', landmark.ig_tags[0]);
+
+        resolve(byTag.map(composePhotos));
+      })(landmark);
+
+      byTagGenerator.next();
+    }));
     let numPhotos;
 
     if(!!(+num)) {
@@ -22,29 +40,6 @@ export default {
     } else {
       numPhotos = 5;
     }
-
-    promises.push(new Promise((resolve, reject) => {
-      var byLocationGenerator = (function *(l) {
-        let byLocation = yield request.call(byLocationGenerator, 'media_search', +l.lat, +l.long);
-
-        resolve(byLocation.map(composePhotos));
-      })(landmark);
-
-      byLocationGenerator.next();
-    }))
-
-
-    promises.push(new Promise((resolve, reject) => {
-      var byTagGenerator = (function *(t) {
-        let byTag = yield request.call(byTagGenerator, 'tag_media_recent', landmark.ig_tags[0]);
-
-        resolve(byTag.map(composePhotos));
-      })(landmark);
-
-      byTagGenerator.next();
-    }));
-
-    console.log('ig ran');
 
     return Promise.all(promises).then(igPhotos => {
       // [[...], [...]] => [......]
