@@ -4,6 +4,7 @@ var request = require('request');
 
 export default {
 
+  // TODO: query for tags, and then query for locations
   getPhotos(landmark, num) {
     let tagRoute = 'https://api.instagram.com/v1/tags/';
     let clientIdRoute = '/media/recent?client_id=' + config.ig_api_client_id;

@@ -22,6 +22,7 @@ export default {
       numPhotos = 5;
     }
 
+    // REVIEW: Should we do 3 queries instead? only lat/long, only flickr_query, and then combined?
     searchOptions = {
       text: landmark.flickr_query,
       safe_search: 1,
