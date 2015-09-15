@@ -6,7 +6,7 @@ var _ = require('lodash');
 
 export default {
   all(req, res) {
-    q.all(landmarks.map((landmark) => {
+    Promise.all(landmarks.map((landmark) => {
       return compose(landmark);
     }))
     .then((composed) => res.json(composed));
@@ -24,11 +24,19 @@ export default {
 
     landmark = landmarks.filter((l) => l.name === name)[0];
 
-    compose(landmark, query.forecast, query.num_photos)
-    .then((composed) => res.json(composed));
+    compose(landmark, query.forecast, query.num_photos).then(composed => res.json(composed));
   }
 };
 
+/**
+ *  Calls the various workers and composes the results into a complete object representing
+ *  the landmark.
+ *
+ *  @param landmark {PlainObject}
+ *  @param forecast {String}
+ *  @param numPhotos {Number|String}
+ *  @returns {Promise}
+ */
 function compose(landmark, forecast, numPhotos) {
   var promises = []
   .concat(weatherWorker.getWeather(landmark.lat, landmark.long, forecast).then(weather => weather))
@@ -36,16 +44,11 @@ function compose(landmark, forecast, numPhotos) {
   .concat(instagramWorker.getPhotos(landmark, numPhotos).then(photos => photos));
 
   return q.spread(promises, (weather, flickrPhotos, igPhotos) => {
-    let photos = [].concat(flickrPhotos).concat(igPhotos);
-
-    if(!numPhotos) {
-      photos.sort((a, b) => (new Date(b.date_taken).getTime() - new Date(a.date_taken).getTime()));
-    }
-
-    // remove photos that think they were taken in the future (we can't reliably guess the date, unfortunately)
-    photos = photos.filter((photo) => {
-      return +photo.date_taken < (new Date().getTime());
-    });
+    let photos = []
+    .concat(flickrPhotos)
+    .concat(igPhotos)
+    .filter(photo => +photo.date_taken < (new Date().getTime()))
+    .sort((a, b) => (new Date(b.date_taken).getTime() - new Date(a.date_taken).getTime()));
 
     let composedLandmark = _.extend(landmark, {
       weather: weather,
