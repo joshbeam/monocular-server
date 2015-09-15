@@ -1,10 +1,11 @@
-'use strict';
 require('babel/polyfill');
 
 import config from '../config-local.js';
 import _ from 'lodash';
 import co from 'co';
-var ig = require('instagram-node').instagram();
+import instagram from 'instagram-node';
+
+const ig = instagram.instagram();
 
 ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client_secret });
 

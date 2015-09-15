@@ -1,8 +1,7 @@
 import config from '../config-local.js';
 import _ from 'lodash';
 import co from 'co';
-
-let Flickr = require('flickrapi');
+import Flickr from 'flickrapi';
 
 let flickrOptions = {
   api_key: config.flickr_api_key,
