@@ -1,8 +1,6 @@
+import _ from 'lodash';
 import landmarks from '../data';
 import { weatherWorker, flickrWorker, instagramWorker } from '../workers';
-
-var q = require('q');
-var _ = require('lodash');
 
 export default {
   all(req, res) {
@@ -43,7 +41,9 @@ function compose(landmark, forecast, numPhotos) {
   .concat(flickrWorker.getPhotos(landmark, numPhotos).then(photos => photos))
   .concat(instagramWorker.getPhotos(landmark, numPhotos).then(photos => photos));
 
-  return q.spread(promises, (weather, flickrPhotos, igPhotos) => {
+  return Promise.all(promises).then(promises => {
+    let [weather, flickrPhotos, igPhotos] = promises;
+
     let photos = []
     .concat(flickrPhotos)
     .concat(igPhotos)
