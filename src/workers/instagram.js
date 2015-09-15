@@ -1,90 +1,66 @@
 'use strict';
+require('babel/polyfill');
 
 import config from '../config-local.js';
 import _ from 'lodash';
-var request = require('request');
+import co from 'co';
 var ig = require('instagram-node').instagram();
 
 ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client_secret });
 
 export default {
-
-  // TODO: query for tags, and then query for locations
+  /**
+   *  @param landmark {PlainObject}
+   *  @param num {Number|String} optional
+   *  @returns {Promise}
+   */
   getPhotos(landmark, num) {
-    let tagRoute = 'https://api.instagram.com/v1/tags/';
-    let clientIdRoute = '/media/recent?client_id=' + config.ig_api_client_id;
     let numPhotos;
 
-    // ig.tag_search('query', function(err, result, remaining, limit) {
-    //   console.log(err, result);
-    // });
-
-    // new Promise((resolve, reject) => {
-    //   ig.location_search({ lat: +landmark.lat, lng: +landmark.long }, (err, res, rem, lim) => {
-    //     if(err) {
-    //       reject(err);
-    //     } else {
-    //       resolve(res.map(p => p.id));
-    //     }
-    //   });
-    // })
-    // .then((ids) => {
-    //   let mediaPromises = ids.map((id) => {
-    //     return new Promise((resolve, reject) => {
-    //       ig.media(id, (err, media, remaining, limit) => {
-    //         if(err) {
-    //           reject(err);
-    //         } else {
-    //           console.log(media);
-    //           resolve(media.data);
-    //         }
-    //       });
-    //     });
-    //   });
-    // });
-
-    let resources = landmark.ig_tags.map((tag) => {
-      return tagRoute + tag + clientIdRoute;
-    });
-
-    if(+num) {
-      if(num > 50) {
-        numPhotos = 50;
-      } else {
-        numPhotos = num;
-      }
+    if(_.inRange(+num, 0, 50)) {
+      numPhotos = +num;
     } else {
-      numPhotos = 5;
+      numPhotos = isNaN(+num) ? 5 : 50;
     }
 
-    let promises = resources.map((resource) => {
-      return new Promise((resolve, reject) => {
-        request(resource, (err, res, body) => {
-          if(err) {
-            reject(err);
-          } else {
-            let photos = (JSON.parse(body)).data;
+    return co(function* () {
+      let results = yield [
+        request('media_search', +landmark.lat, +landmark.long),
+        request('tag_media_recent', landmark.ig_tags[0])
+      ];
 
-            photos.sort((a, b) => (new Date(+b.created_time * 1000) - new Date(+a.created_time * 1000)));
-
-            resolve(photos.map((photo) => {
-              return {
-                date_taken: new Date(+photo.created_time * 1000).getTime(),
-                src: photo.images.standard_resolution.url,
-                url: photo.link
-              };
-            }));
-          }
-        });
-      });
+     return _.uniq(_.flatten(results).map(composePhotos)).slice(0, numPhotos);
     });
-
-    return Promise.all(promises)
-    .then((promises) => {
-      // [[photos for tag], [photos for tag]] => [all photos for all tags]
-      return _.flatten(promises, true).slice(0, numPhotos);
-    });
-
   }
 
 };
+
+/**
+ *  Calls the instagram API
+ *
+ *  @param method {String} one of the allowed instagram API methods
+ *  @param ...query {PlainObject|String} appropriate instagram API query params
+ *  @returns {Promise}
+ */
+
+function request(method, ...query) {
+  return new Promise((resolve, reject) => {
+    ig[method](...query, (err, res, rem, lim) => {
+      resolve(res);
+    });
+  });
+}
+
+/**
+ *  Generates a composed photo object for the client to consume.
+ *
+ *  @param media {PlainObject}
+ *  @returns {PlainObject}
+ */
+function composePhotos(media) {
+  return {
+    date_taken: new Date(+media.created_time * 1000).getTime(),
+    src: media.images.standard_resolution.url,
+    url: media.link
+  }
+}

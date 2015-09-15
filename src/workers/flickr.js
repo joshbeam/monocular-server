@@ -1,4 +1,6 @@
 import config from '../config-local.js';
+import _ from 'lodash';
+import co from 'co';
 
 let Flickr = require('flickrapi');
 
@@ -12,14 +14,10 @@ export default {
     let searchOptions;
     let numPhotos;
 
-    if(+num) {
-      if(num > 50) {
-        numPhotos = 50;
-      } else {
-        numPhotos = num;
-      }
+    if(_.inRange(+num, 0, 50)) {
+      numPhotos = +num;
     } else {
-      numPhotos = 5;
+      numPhotos = isNaN(+num) ? 5 : 50;
     }
 
     // REVIEW: Should we do 3 queries instead? only lat/long, only flickr_query, and then combined?
@@ -33,47 +31,41 @@ export default {
       page: 1
     };
 
-    return new Promise((resolve, reject) => {
-      Flickr.tokenOnly(flickrOptions, function(error, flickr) {
-        flickr.photos.search(searchOptions, (err, res) => {
-          if(err) {
-            reject(err);
-          } else {
-            let promises = res.photos.photo.map((photo) => {
-
-              return new Promise((resolve, reject) => {
-                flickr.photos.getInfo({
-                  photo_id: photo.id
-                }, (err, res) => {
-                  if(err) {
-                    reject(err);
-                  } else {
-                    resolve(res);
-                  }
-                });
-              });
-
-            });
-
-            return Promise.all(promises)
-            .then((photos) => {
-              var composedPhotos = photos.map((photo) => {
-                var data = photo.photo;
-
-                return {
-                  src: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join(''),
-                  url: data.urls.url[0]._content,
-                  date_taken: new Date(data.dates.taken).getTime()
-                };
-              });
-
-              resolve(composedPhotos);
-            });
-          }
-
-        });
+    return co(function *() {
+      // we can't start until we have our flickr object
+      let flickr = yield new Promise((resolve, reject) => {
+        Flickr.tokenOnly(flickrOptions, (err, f) => resolve(f));
       });
+
+      // array of query promises
+      let results = yield [
+        co(function *() {
+          let data = yield request(flickr, 'search', searchOptions);
+
+          return yield data.photos.photo.map(photo => request(flickr, 'getInfo', { photo_id: photo.id }));
+        })
+      ];
+
+      return _.flatten(results).map(composePhotos);
     });
 
   }
 };
+
+function composePhotos(photo) {
+  let data = photo.photo;
+
+  return {
+    src: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join(''),
+    url: data.urls.url[0]._content,
+    date_taken: new Date(data.dates.taken).getTime()
+  };
+}
+
+function request(f, method, ...query) {
+  return new Promise((resolve, reject) => {
+    f.photos[method](...query, (err, res) => {
+      resolve(res);
+    });
+  });
+}
