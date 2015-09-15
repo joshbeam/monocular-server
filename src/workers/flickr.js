@@ -1,5 +1,6 @@
 import config from '../config-local.js';
 import _ from 'lodash';
+import co from 'co';
 
 let Flickr = require('flickrapi');
 
