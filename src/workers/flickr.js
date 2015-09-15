@@ -14,14 +14,10 @@ export default {
     let searchOptions;
     let numPhotos;
 
-    if(+num) {
-      if(num > 50) {
-        numPhotos = 50;
-      } else {
-        numPhotos = num;
-      }
+    if(_.inRange(+num, 0, 50)) {
+      numPhotos = +num;
     } else {
-      numPhotos = 5;
+      numPhotos = isNaN(+num) ? 5 : 50;
     }
 
     // REVIEW: Should we do 3 queries instead? only lat/long, only flickr_query, and then combined?
@@ -35,29 +31,22 @@ export default {
       page: 1
     };
 
-    return new Promise((resolve, reject) => {
-      Flickr.tokenOnly(flickrOptions, function(error, flickr) {
-        let promises = []
-        .concat(new Promise((resolve, reject) => {
-          var byLocationGenerator = (function *(l) {
-            let byLocation = yield request.call(byLocationGenerator, flickr, 'search', searchOptions);
-
-            let photoPromises = byLocation.photos.photo.map(photo => {
-              return request(flickr, 'getInfo', { photo_id: photo.id });
-            });
-
-            Promise.all(photoPromises).then(photos => {
-              resolve(photos.map(composePhotos));
-            }, function() {
-              console.log('error');
-            });
-          })(landmark);
-
-          byLocationGenerator.next();
-        }));
-
-        resolve(Promise.all(promises).then(values => _.flatten(values)));
+    return co(function *() {
+      // we can't start until we have our flickr object
+      let flickr = yield new Promise((resolve, reject) => {
+        Flickr.tokenOnly(flickrOptions, (err, f) => resolve(f));
       });
+
+      // array of query promises
+      let results = yield [
+        co(function *() {
+          let data = yield request(flickr, 'search', searchOptions);
+
+          return yield data.photos.photo.map(photo => request(flickr, 'getInfo', { photo_id: photo.id }));
+        })
+      ];
+
+      return _.flatten(results).map(composePhotos);
     });
 
   }
@@ -77,7 +66,6 @@ function request(f, method, ...query) {
   return new Promise((resolve, reject) => {
     f.photos[method](...query, (err, res) => {
       resolve(res);
-      if(typeof this !== 'undefined' && 'next' in this) this.next(res);
     });
   });
 }

@@ -11,10 +11,17 @@ ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client
 export default {
   /**
    *  @param landmark {PlainObject}
-   *  @param num {Number|String}
+   *  @param num {Number|String} optional
+   *  @returns {Promise}
    */
   getPhotos(landmark, num) {
     let numPhotos;
+
+    if(_.inRange(+num, 0, 50)) {
+      numPhotos = +num;
+    } else {
+      numPhotos = isNaN(+num) ? 5 : 50;
+    }
 
     if(!!(+num)) {
       if(num > 50) {
