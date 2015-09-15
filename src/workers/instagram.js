@@ -23,16 +23,6 @@ export default {
       numPhotos = isNaN(+num) ? 5 : 50;
     }
 
-    if(!!(+num)) {
-      if(num > 50) {
-        numPhotos = 50;
-      } else {
-        numPhotos = num;
-      }
-    } else {
-      numPhotos = 5;
-    }
-
     return co(function* () {
       let results = yield [
         request('media_search', +landmark.lat, +landmark.long),
