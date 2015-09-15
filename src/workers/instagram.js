@@ -3,6 +3,7 @@ require('babel/polyfill');
 
 import config from '../config-local.js';
 import _ from 'lodash';
+import co from 'co';
 var ig = require('instagram-node').instagram();
 
 ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client_secret });
@@ -13,27 +14,6 @@ export default {
    *  @param num {Number|String}
    */
   getPhotos(landmark, num) {
-    let promises = []
-    .concat(new Promise((resolve, reject) => {
-      // query for photos by location
-      var byLocationGenerator = (function *(l) {
-        let byLocation = yield request.call(byLocationGenerator, 'media_search', +l.lat, +l.long);
-
-        resolve(byLocation.map(composePhotos));
-      })(landmark);
-
-      byLocationGenerator.next();
-    }))
-    .concat(new Promise((resolve, reject) => {
-      // query for photos by tag
-      var byTagGenerator = (function *(t) {
-        let byTag = yield request.call(byTagGenerator, 'tag_media_recent', landmark.ig_tags[0]);
-
-        resolve(byTag.map(composePhotos));
-      })(landmark);
-
-      byTagGenerator.next();
-    }));
     let numPhotos;
 
     if(!!(+num)) {
@@ -46,27 +26,31 @@ export default {
       numPhotos = 5;
     }
 
-    return Promise.all(promises).then(igPhotos => {
-      // [[...], [...]] => [......]
-      let flat = _.flatten(igPhotos);
-      // the two separate queries could return some duplicate objects
-      let unique = _.uniq(flat);
+    return co(function* () {
+      let results = yield [
+        request('media_search', +landmark.lat, +landmark.long),
+        request('tag_media_recent', landmark.ig_tags[0])
+      ];
 
-      return unique.slice(0, numPhotos)
+     return _.uniq(_.flatten(results).map(composePhotos)).slice(0, numPhotos);
     });
   }
 
 };
 
 /**
- *  Calls the instagram API and then invokes its generator's #next method
+ *  Calls the instagram API
  *
  *  @param method {String} one of the allowed instagram API methods
  *  @param ...query {PlainObject|String} appropriate instagram API query params
+ *  @returns {Promise}
  */
+
 function request(method, ...query) {
-  ig[method](...query, (err, res, rem, lim) => {
-    this.next(res);
+  return new Promise((resolve, reject) => {
+    ig[method](...query, (err, res, rem, lim) => {
+      resolve(res);
+    });
   });
 }
 
