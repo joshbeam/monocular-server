@@ -1,4 +1,5 @@
 import config from '../config-local.js';
+import _ from 'lodash';
 
 let Flickr = require('flickrapi');
 
@@ -35,45 +36,47 @@ export default {
 
     return new Promise((resolve, reject) => {
       Flickr.tokenOnly(flickrOptions, function(error, flickr) {
-        flickr.photos.search(searchOptions, (err, res) => {
-          if(err) {
-            reject(err);
-          } else {
-            let promises = res.photos.photo.map((photo) => {
+        let promises = []
+        .concat(new Promise((resolve, reject) => {
+          var byLocationGenerator = (function *(l) {
+            let byLocation = yield request.call(byLocationGenerator, flickr, 'search', searchOptions);
 
-              return new Promise((resolve, reject) => {
-                flickr.photos.getInfo({
-                  photo_id: photo.id
-                }, (err, res) => {
-                  if(err) {
-                    reject(err);
-                  } else {
-                    resolve(res);
-                  }
-                });
-              });
-
+            let photoPromises = byLocation.photos.photo.map(photo => {
+              return request(flickr, 'getInfo', { photo_id: photo.id });
             });
 
-            return Promise.all(promises)
-            .then((photos) => {
-              var composedPhotos = photos.map((photo) => {
-                var data = photo.photo;
-
-                return {
-                  src: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join(''),
-                  url: data.urls.url[0]._content,
-                  date_taken: new Date(data.dates.taken).getTime()
-                };
-              });
-
-              resolve(composedPhotos);
+            Promise.all(photoPromises).then(photos => {
+              resolve(photos.map(composePhotos));
+            }, function() {
+              console.log('error');
             });
-          }
+          })(landmark);
 
-        });
+          byLocationGenerator.next();
+        }));
+
+        resolve(Promise.all(promises).then(values => _.flatten(values)));
       });
     });
 
   }
 };
+
+function composePhotos(photo) {
+  let data = photo.photo;
+
+  return {
+    src: ['https://farm', data.farm, '.staticflickr.com/', data.server, '/', data.id, '_', data.secret, '.jpg'].join(''),
+    url: data.urls.url[0]._content,
+    date_taken: new Date(data.dates.taken).getTime()
+  };
+}
+
+function request(f, method, ...query) {
+  return new Promise((resolve, reject) => {
+    f.photos[method](...query, (err, res) => {
+      resolve(res);
+      if(typeof this !== 'undefined' && 'next' in this) this.next(res);
+    });
+  });
+}
