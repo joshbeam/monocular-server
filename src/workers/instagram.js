@@ -26,11 +26,24 @@ export default {
 
     return co(function* () {
       let results = yield [
+        // query for coordinates
         request('media_search', +landmark.lat, +landmark.long),
-        request('tag_media_recent', landmark.ig_tags[0])
+        // query for all of the tags
+        co(function* () {
+          return yield landmark.ig_tags.map(tag => {
+            return request('tag_media_recent', tag);
+          });
+        })
       ];
 
-     return _.uniq(_.flatten(results).map(composePhotos)).slice(0, numPhotos);
+      /**
+       *  Our results is a bunch of (potentially) deeply nested arrays.
+       *  Functionally, below will turn [[],[],[[],[],[[]]]] into [...],
+       *  remove duplicates (because some of the queries may have
+       *  identical items), and compose usable "photo" objects. Lastly, we'll
+       *  trim off excess items, limiting the array to numPhotos.
+       */
+      return _.uniq(_.flatten(results, true).map(composePhotos)).slice(0, numPhotos);
     });
   }
 
