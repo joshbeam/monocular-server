@@ -20,15 +20,25 @@ export default {
     }
 
     // REVIEW: Should we do 3 queries instead? only lat/long, only flickr_query, and then combined?
-    searchOptions = {
-      text: landmark.flickr_query,
-      safe_search: 1,
-      content_type: 1,
-      lat: landmark.lat,
-      lon: landmark.lon,
-      per_page: numPhotos,
-      page: 1
-    };
+    searchOptions = [
+      {
+        text: landmark.flickr_query,
+        safe_search: 1,
+        per_page: numPhotos,
+        page: 1
+      },
+      {
+        text: landmark.flickr_query,
+        safe_search: 1,
+        lat: landmark.lat,
+        lon: landmark.lon,
+        radius: 2,
+        sort: 'date-posted-desc',
+        per_page: numPhotos,
+        page: 1
+      }
+      // do a tag query too
+    ];
 
     return co(function *() {
       // we can't start until we have our flickr object
@@ -36,16 +46,20 @@ export default {
         Flickr.tokenOnly(flickrOptions, (err, f) => resolve(f));
       });
 
-      // array of query promises
-      let results = yield [
-        co(function *() {
-          let data = yield request(flickr, 'search', searchOptions);
+      let results = yield searchOptions.map(options => {
+        return co(function *() {
+          let data = yield request(flickr, 'search', options);
 
           return yield data.photos.photo.map(photo => request(flickr, 'getInfo', { photo_id: photo.id }));
-        })
-      ];
 
-      return _.flatten(results).map(composePhotos);
+        }).catch(err => {
+
+          return Promise.resolve(console.warn('Error:', err.error, 'For query:', err.query));
+
+        });
+      });
+
+      return _.uniq(_.flatten(results.filter(result => result !== undefined), true), 'photo.id').map(composePhotos);
     });
 
   }
@@ -64,7 +78,11 @@ function composePhotos(photo) {
 function request(f, method, ...query) {
   return new Promise((resolve, reject) => {
     f.photos[method](...query, (err, res) => {
-      resolve(res);
+      if(err) {
+        reject({ error: err, query: [...query] });
+      } else {
+        resolve(res);
+      }
     });
   });
 }
