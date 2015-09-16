@@ -33,7 +33,7 @@ export default {
           return yield landmark.ig_tags.map(tag => {
             return request('tag_media_recent', tag);
           });
-        })
+        }).catch(logError)
       ];
 
       /**
@@ -49,6 +49,10 @@ export default {
 
 };
 
+function logError(err) {
+  return Promise.resolve(console.warn('Error:', err.error, 'For query:', err.query));
+}
+
 /**
  *  Calls the instagram API
  *
@@ -60,7 +64,11 @@ export default {
 function request(method, ...query) {
   return new Promise((resolve, reject) => {
     ig[method](...query, (err, res, rem, lim) => {
-      resolve(res);
+      if(err) {
+        reject({ error: err, query: [...query] });
+      } else {
+        resolve(res);
+      }
     });
   });
 }
