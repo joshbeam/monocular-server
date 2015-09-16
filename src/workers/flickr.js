@@ -52,11 +52,7 @@ export default {
 
           return yield data.photos.photo.map(photo => request(flickr, 'getInfo', { photo_id: photo.id }));
 
-        }).catch(err => {
-
-          return Promise.resolve(console.warn('Error:', err.error, 'For query:', err.query));
-
-        });
+        }).catch(logError);
       });
 
       return _.uniq(_.flatten(results.filter(result => result !== undefined), true), 'photo.id').map(composePhotos);
@@ -73,6 +69,10 @@ function composePhotos(photo) {
     url: data.urls.url[0]._content,
     date_taken: new Date(data.dates.taken).getTime()
   };
+}
+
+function logError(err) {
+  return Promise.resolve(console.warn('Error:', err.error, 'For query:', err.query));
 }
 
 function request(f, method, ...query) {
