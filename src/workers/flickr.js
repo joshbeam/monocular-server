@@ -8,36 +8,37 @@ let flickrOptions = {
   secret: config.flickr_api_secret
 };
 
-export default {
-  getPhotos(landmark, num) {
-    let searchOptions;
-    let numPhotos;
+// REVIEW: should we limit the number of photos per query to numPhotos/queries.length ?
+class Query {
+  constructor(landmark, numPhotos) {
+    this.text = landmark.flickr_query;
+    this.safe_search = 1;
+    this.per_page = numPhotos;
+    this.page = 1;
+  }
 
-    if(_.inRange(+num, 0, 50)) {
-      numPhotos = +num;
-    } else {
-      numPhotos = isNaN(+num) ? 5 : 50;
-    }
+  set(query) {
+    Object.assign(this, query);
+
+    return this;
+  }
+}
+
+export default {
+  getPhotos(landmark, numPhotos) {
+    let queries;
 
     // REVIEW: Should we do 3 queries instead? only lat/long, only flickr_query, and then combined?
-    searchOptions = [
-      {
-        text: landmark.flickr_query,
-        safe_search: 1,
-        per_page: numPhotos,
-        page: 1
-      },
-      {
-        text: landmark.flickr_query,
-        safe_search: 1,
+    queries = [
+      new Query(landmark, numPhotos),
+      new Query(landmark, numPhotos).set({
         lat: landmark.lat,
-        lon: landmark.lon,
-        radius: 2,
-        sort: 'date-posted-desc',
-        per_page: numPhotos,
-        page: 1
-      }
-      // do a tag query too
+        lon: landmark.long,
+        radius: 0.25,
+        radius_units: 'mi',
+        sort: 'date-posted-desc'
+      }),
+      new Query(landmark, numPhotos).set({ tags: landmark.flickr_tags })
     ];
 
     return co(function *() {
@@ -46,9 +47,9 @@ export default {
         Flickr.tokenOnly(flickrOptions, (err, f) => resolve(f));
       });
 
-      let results = yield searchOptions.map(options => {
+      let results = yield queries.map(query => {
         return co(function *() {
-          let data = yield request(flickr, 'search', options);
+          let data = yield request(flickr, 'search', query);
 
           return yield data.photos.photo.map(photo => request(flickr, 'getInfo', { photo_id: photo.id }));
 

@@ -15,14 +15,7 @@ export default {
    *  @param num {Number|String} optional
    *  @returns {Promise}
    */
-  getPhotos(landmark, num) {
-    let numPhotos;
-
-    if(_.inRange(+num, 0, 50)) {
-      numPhotos = +num;
-    } else {
-      numPhotos = isNaN(+num) ? 5 : 50;
-    }
+  getPhotos(landmark, numPhotos) {
 
     return co(function* () {
       let results = yield [
