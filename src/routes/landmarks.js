@@ -4,8 +4,10 @@ import { weatherWorker, flickrWorker, instagramWorker, pxWorker } from '../worke
 
 export default {
   all(req, res) {
+    let numPhotos = resolveNumPhotos(req.query.num_photos);
+
     Promise.all(landmarks.map((landmark) => {
-      return compose(landmark, undefined, 5);
+      return compose(landmark, undefined, numPhotos);
     }))
     .then((composed) => res.json(composed));
   },
@@ -14,14 +16,8 @@ export default {
     var name = req.params.name;
     var landmarkNames = landmarks.map((l) => l.name);
     var query = req.query;
-    var numPhotos;
+    var numPhotos = resolveNumPhotos(query.num_photos);
     var landmark;
-
-    if(_.inRange(+query.num_photos, 0, 50)) {
-      numPhotos = +query.num_photos;
-    } else {
-      numPhotos = isNaN(+query.num_photos) ? 5 : 50;
-    }
 
     if(landmarkNames.indexOf(name) === -1) {
       res.sendStatus(404);
@@ -67,4 +63,12 @@ function compose(landmark, forecast, numPhotos) {
 
     return _.omit(composedLandmark, 'flickr_query', 'ig_tags');
   });
+}
+
+function resolveNumPhotos(num) {
+  if(_.inRange(+num, 0, 50)) {
+    return +num;
+  } else {
+    return isNaN(+num) ? 5 : 50;
+  }
 }
