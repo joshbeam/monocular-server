@@ -1,0 +1,4 @@
+#!/bin/bash
+
+babel ./scripts/src --out-dir ./scripts/dist;
+chmod a+x scripts/dist/*

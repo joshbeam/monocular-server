@@ -7,6 +7,8 @@
     "500px": "^0.5.1",
     "babel": "^5.8.23",
     "co": "^4.6.0",
+    "csv": "^0.4.6",
+    "csv-parse": "^1.0.0",
     "express": "^4.13.3",
     "flickrapi": "^0.3.36",
     "instagram-node": "^0.5.8",
@@ -18,7 +20,8 @@
   },
   "devDependencies": {},
   "scripts": {
-    "start": "./.bin/serve"
+    "start": "./.bin/serve",
+    "compile": "./.bin/compile-scripts"
   },
   "repository": {
     "type": "git",

@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import landmarks from '../data';
 import { weatherWorker, flickrWorker, instagramWorker, pxWorker } from '../workers';
+import redis from 'redis';
 
 export default {
   all(req, res) {

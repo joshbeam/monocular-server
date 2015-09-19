@@ -3,3 +3,4 @@ src/config-local.js
 dist/
 npm-debug.log
 data/
+scripts/dist
