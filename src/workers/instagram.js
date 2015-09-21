@@ -20,10 +20,10 @@ export default {
     return co(function* () {
       let results = yield [
         // query for coordinates
-        request('media_search', +landmark.lat, +landmark.long),
+        request('media_search', +landmark.lat, +landmark.lon),
         // query for all of the tags
         co(function* () {
-          return yield landmark.ig_tags.map(tag => {
+          return yield landmark.tags.map(tag => {
             return request('tag_media_recent', tag);
           });
         }).catch(logError)

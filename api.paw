@@ -103,7 +103,7 @@
     </object>
     <object type="LMREQUEST" id="z108">
         <attribute name="uuid" type="string">FCD42CB1-4A1E-455A-9808-94A30903F03E</attribute>
-        <attribute name="url" type="string">http://localhost:1337/api/1.0/landmarks/golden-gate</attribute>
+        <attribute name="url" type="string">http://localhost:1337/api/1.0/landmarks/golden_gate_bridge?num_photos=1</attribute>
         <attribute name="storecookies" type="bool">1</attribute>
         <attribute name="sendcookies" type="bool">1</attribute>
         <attribute name="redirectmethod" type="bool">0</attribute>

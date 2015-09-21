@@ -1,75 +1,77 @@
 import _ from 'lodash';
-import landmarks from '../data';
-import { weatherWorker, flickrWorker, instagramWorker, pxWorker } from '../workers';
-import redis from 'redis';
+import co from 'co';
+import { Client, Operations } from '../util';
 
 export default {
+  one(req, res) {
+    let numPhotos = resolveNumPhotos(req.query.num_photos);
+
+    co(function*() {
+      const landmark = yield Operations.getLandmarks()
+      .then(results => {
+        const landmarks = new Set( results.map(result => result.name) );
+        const name = req.params.name;
+
+        if(!landmarks.has(name)) {
+          throw { statusCode: 404 };
+        }
+
+        let id = results.filter(result => result.name === name)[0].id;
+
+        return {
+          mediaKey: ['landmarks', id, 'media'].join(':'),
+          data: results.filter(result => result.id === id)[0]
+        };
+      });
+
+      const media = yield Operations.getMedia(landmark.mediaKey, numPhotos);
+
+      return compose(landmark.data, media);
+    })
+    .then(landmark => {
+      return res.json(landmark);
+    })
+    .catch(sendError);
+  },
+
   all(req, res) {
     let numPhotos = resolveNumPhotos(req.query.num_photos);
 
-    Promise.all(landmarks.map((landmark) => {
-      return compose(landmark, undefined, numPhotos);
-    }))
-    .then((composed) => res.json(composed));
-  },
+    co(function*() {
+      const landmarks = yield Operations.getLandmarks();
 
-  one(req, res) {
-    var name = req.params.name;
-    var landmarkNames = landmarks.map((l) => l.name);
-    var query = req.query;
-    var numPhotos = resolveNumPhotos(query.num_photos);
-    var landmark;
+      const composed = yield landmarks.map(landmark => {
+        let key = ['landmarks', landmark.id, 'media'].join(':');
 
-    if(landmarkNames.indexOf(name) === -1) {
-      res.sendStatus(404);
-    }
+        return Operations.getMedia(key, numPhotos)
+        .then(media => {
+          return compose(landmark, media);
+        });
+      });
 
-    landmark = landmarks.filter((l) => l.name === name)[0];
-
-    compose(landmark, query.forecast, numPhotos).then(composed => res.json(composed));
+      return composed;
+    })
+    .then(landmarks => {
+      res.json(landmarks);
+    })
+    .catch(sendError);
   }
 };
 
-/**
- *  Calls the various workers and composes the results into a complete object representing
- *  the landmark.
- *
- *  @param landmark {PlainObject}
- *  @param forecast {String}
- *  @param numPhotos {Number|String}
- *  @returns {Promise}
- */
-function compose(landmark, forecast, numPhotos) {
-  var promises = []
-  .concat(weatherWorker.getWeather(landmark.lat, landmark.long, forecast).then(weather => weather))
-  .concat(flickrWorker.getPhotos(landmark, numPhotos).then(photos => photos))
-  .concat(instagramWorker.getPhotos(landmark, numPhotos).then(photos => photos))
-  .concat(pxWorker.getPhotos(landmark, numPhotos).then(photos => photos));
+function sendError(err) {
+  console.log('Error:', err);
 
-  return Promise.all(promises).then(promises => {
-    let [weather, flickrPhotos, igPhotos, pxPhotos] = promises;
-
-    let photos = []
-    .concat(flickrPhotos)
-    .concat(igPhotos)
-    .concat(pxPhotos)
-    .filter(photo => +photo.date_taken < (new Date().getTime()))
-    .sort((a, b) => (new Date(b.date_taken).getTime() - new Date(a.date_taken).getTime()))
-    .slice(0, numPhotos);
-
-    let composedLandmark = _.extend(landmark, {
-      weather: weather,
-      photos: photos
-    });
-
-    return _.omit(composedLandmark, 'flickr_query', 'ig_tags');
-  });
+  if(statusCode in err) {
+    res.sendStatus(statusCode);
+  } else {
+    res.sendStatus(500);
+  }
 }
 
 function resolveNumPhotos(num) {
-  if(_.inRange(+num, 0, 50)) {
-    return +num;
-  } else {
-    return isNaN(+num) ? 5 : 50;
-  }
+  return isNaN(+num) ? 5 : +num;
+}
+
+function compose(landmark, media) {
+  return _.omit(Object.assign(landmark, { photos: media }), 'id', 'tags', 'media');
 }
