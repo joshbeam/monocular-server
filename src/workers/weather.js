@@ -4,12 +4,12 @@ let url = 'http://api.openweathermap.org/';
 let route = 'data/2.5/'
 
 export default {
-  getWeather(lat, long, forecast) {
+  getWeather(lat, lon, forecast) {
     return new Promise((resolve, reject) => {
       var resource = [url, route].join('');
       var params = {
         lat: lat,
-        lon: long,
+        lon: lon,
         units: 'imperial'
       };
       var type;
