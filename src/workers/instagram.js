@@ -4,7 +4,7 @@ import config from '../config-local.js';
 import _ from 'lodash';
 import co from 'co';
 import instagram from 'instagram-node';
-
+import { Operations } from '../util';
 const ig = instagram.instagram();
 
 ig.use({ client_id: config.ig_api_client_id, client_secret: config.ig_api_client_secret });
@@ -18,6 +18,10 @@ export default {
   getPhotos(landmark, numPhotos) {
 
     return co(function* () {
+      let latest = yield Operations.getApiMedia('instagram', 1);
+
+      console.log('latest', latest);
+
       let results = yield [
         // query for coordinates
         request('media_search', +landmark.lat, +landmark.lon),
@@ -36,7 +40,7 @@ export default {
        *  identical items), and compose usable "photo" objects. Lastly, we'll
        *  trim off excess items, limiting the array to numPhotos.
        */
-      return _.uniq(_.flatten(results, true).map(composePhotos)).slice(0, numPhotos);
+      return _.uniq(_.flatten(results, true).map(composePhotos));
     });
   }
 

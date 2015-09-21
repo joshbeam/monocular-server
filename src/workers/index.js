@@ -22,27 +22,33 @@ export default {
       landmarks.forEach(landmark => {
         let id = landmark.id;
 
-        instagramWorker.getPhotos(landmark, 5)
+        instagramWorker.getPhotos(landmark)
         .then(media => {
-          let promises = media.map(medium => {
+          let promises;
 
-            return new Promise((resolve, reject) => {
-              client.incr('next_media_id', (err, res) => {
-                if (err) {
-                  return reject(err);
-                } else {
-                  console.log('Success:', res);
+          if(media.length) {
+            promises = media.map(medium => {
 
-                  resolve({
-                    id: res,
-                    data: medium,
-                    landmark_id: id
-                  });
-                }
+              return new Promise((resolve, reject) => {
+                client.incr('next_media_id', (err, res) => {
+                  if (err) {
+                    return reject(err);
+                  } else {
+                    console.log('Success:', res);
+
+                    resolve({
+                      id: res,
+                      data: medium,
+                      landmark_id: id
+                    });
+                  }
+                });
               });
-            });
 
-          });
+            });
+          } else {
+            throw 'No more recent media for instagram';
+          }
 
           return Promise.all(promises);
 

@@ -71,5 +71,55 @@ export default {
       });
     });
 
+  },
+  getApis() {
+    return new Promise((resolve, reject) => {
+      client.sort(['apis', 'by', 'nosort', 'get', '#', 'get', 'apis:*'], (err, res) => {
+        if(err) {
+          return reject(err);
+        }
+
+        let apis = res.map((item, i) => {
+          let group = res.slice(i, i+1);
+
+          res.splice(i+1, 1);
+
+          return {
+            id: group[0],
+            name: group[1]
+          };
+        });
+
+        resolve(apis);
+      });
+    });
+  },
+  getApiId(api) {
+    return new Promise((resolve, reject) => {
+      client.get('apis:' + api, (err, res) => {
+        if(err) {
+          return reject(err);
+        }
+
+        resolve(res);
+      });
+    });
+  },
+  getApiMedia(api, limit = -1) {
+    return new Promise((resolve, reject) => {
+      client.get('apis:' + api, (err, res) => {
+        if(err) {
+          return reject(err);
+        }
+
+        client.zrevrange(['apis:' + res + ':media', 0, limit], (err, res) => {
+          if(err) {
+            return reject(err);
+          }
+
+          resolve(res);
+        });
+      });
+    });
   }
 };
